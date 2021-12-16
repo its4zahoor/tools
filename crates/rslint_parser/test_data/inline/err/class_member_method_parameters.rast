@@ -109,7 +109,7 @@ error[SyntaxError]: expected `,` but instead found `}`
 error[SyntaxError]: expected `')'` but instead the file ends
   ┌─ class_member_method_parameters.js:2:1
   │
-2 │ 
+2 │
   │ ^ the file ends here
 
 --

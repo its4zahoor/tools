@@ -141,7 +141,7 @@ error[SyntaxError]: `static` modifier already seen.
   │
 2 │ class B { static static foo() {} }
   │           ------ ^^^^^^
-  │           │       
+  │           │
   │           First seen here
 
 --
