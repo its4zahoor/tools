@@ -75,7 +75,7 @@ JsModule {
 error[SyntaxError]: expected a class method body but instead found ''
   ┌─ class_member_method_body.js:2:1
   │
-2 │
+2 │ 
   │ ^ Expected a class method body here
 
 --

@@ -134,12 +134,7 @@ fn parse_class(p: &mut Parser, kind: ClassKind) -> ParsedSyntax<ConditionalSynta
 		class_is_valid = false;
 	}
 
-	if implements_clause(&mut guard)
-		.or_missing(&mut *guard)
-		.is_err()
-	{
-		class_is_valid = false;
-	}
+	implements_clause(&mut guard).or_missing(&mut *guard);
 
 	guard.expect_required(T!['{']);
 	ClassMembersList.parse_list(&mut *guard);
@@ -150,7 +145,7 @@ fn parse_class(p: &mut Parser, kind: ClassKind) -> ParsedSyntax<ConditionalSynta
 	Present(class_marker).into_conditional(class_is_valid)
 }
 
-fn implements_clause(p: &mut Parser) -> ParsedSyntax<ConditionalSyntax> {
+fn implements_clause(p: &mut Parser) -> ParsedSyntax<CompletedMarker> {
 	if p.cur_src() != "implements" {
 		return Absent;
 	}
@@ -191,8 +186,12 @@ fn implements_clause(p: &mut Parser) -> ParsedSyntax<ConditionalSyntax> {
 
 	list.complete(p, TS_TYPE_LIST);
 
-	let completed_syntax = Present(implements_clause.complete(p, TS_IMPLEMENTS_CLAUSE));
-	completed_syntax.into_conditional(is_valid)
+	let kind = if is_valid {
+		TS_IMPLEMENTS_CLAUSE
+	} else {
+		JS_UNKNOWN
+	};
+	Present(implements_clause.complete(p, kind))
 }
 
 fn extends_clause(p: &mut Parser) -> ParsedSyntax<ConditionalSyntax> {
@@ -462,6 +461,8 @@ fn parse_class_member(p: &mut Parser) -> ParsedSyntax<ConditionalSyntax> {
 
 	if let NodeMarker(member_name) = member_name {
 		if is_at_property_class_member(p, 0) {
+			// test_err class_declare_member
+			// class B { declare foo }
 			let property = if modifiers.get_range(ModifierKind::Declare).is_some() {
 				property_declaration_class_member_body(p, member_marker, member_name.kind())
 			} else {
@@ -695,7 +696,13 @@ pub(crate) fn parse_initializer_clause(p: &mut Parser) -> ParsedSyntax<Completed
 		let m = p.start();
 		p.bump(T![=]);
 
+		// TODO remove this pos tracking hack when migrating `expr_or_assignment` to `ParsedSyntax`
+		let before_expr_pos = p.token_pos();
 		expr_or_assignment(p);
+
+		if before_expr_pos == p.token_pos() {
+			p.missing();
+		}
 
 		Present(m.complete(p, JS_INITIALIZER_CLAUSE))
 	} else {

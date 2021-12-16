@@ -4,6 +4,11 @@ JsModule {
     items: JsModuleItemList [
         JsExpressionStatement {
             expression: Template {
+                tag: JsIdentifierExpression {
+                    name: JsReferenceIdentifier {
+                        value_token: IDENT@0..3 "foo" [] [],
+                    },
+                },
                 l_tick_token: BACKTICK@3..4 "`" [] [],
                 elements: TemplateElementList [
                     TemplateChunkElement {
