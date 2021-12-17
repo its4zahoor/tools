@@ -11,7 +11,7 @@ use crate::syntax::class::parse_class_declaration;
 use crate::syntax::expr::parse_any_name;
 use crate::syntax::function::parse_function_declaration;
 use crate::syntax::js_parse_error;
-use crate::{SyntaxKind::*, *};
+use crate::{JsSyntaxKind::*, *};
 
 pub const BASE_TS_RECOVERY_SET: TokenSet = token_set![
 	T![void],
@@ -126,9 +126,7 @@ pub(crate) fn ts_declare(p: &mut Parser) -> Option<CompletedMarker> {
 		..p.state.clone()
 	});
 	Some(match p.nth(1) {
-		T![function] => parse_function_declaration(p)
-			.or_invalid_to_unknown(p, JS_UNKNOWN_STATEMENT)
-			.unwrap(),
+		T![function] => parse_function_declaration(p).unwrap(),
 		T![class] => {
 			let m = p.start();
 			p.bump_remap(T![declare]);
@@ -176,15 +174,15 @@ pub(crate) fn ts_declare(p: &mut Parser) -> Option<CompletedMarker> {
 			let m = p.start();
 			p.bump_remap(T![declare]);
 			let res = ts_decl(p);
-			if let Some(res) = res {
+			return if let Some(res) = res {
 				let kind = res.kind();
 				res.undo_completion(p).abandon(p);
-				return Some(m.complete(p, kind));
+				Some(m.complete(p, kind))
 			} else {
 				m.abandon(p);
 				p.rewind(checkpoint);
-				return None;
-			}
+				None
+			};
 		}
 	})
 }
@@ -422,8 +420,6 @@ pub(crate) fn ts_heritage_clause(p: &mut Parser, exprs: bool) -> Vec<CompletedMa
 
 	if p.at(T![<]) {
 		ts_type_args(p);
-	} else if !exprs {
-		p.missing();
 	}
 
 	// it doesnt matter if we complete as ts_expr_with_type_args even if its an lhs expr
@@ -442,8 +438,6 @@ pub(crate) fn ts_heritage_clause(p: &mut Parser, exprs: bool) -> Vec<CompletedMa
 		}
 		if p.at(T![<]) {
 			ts_type_args(p);
-		} else if !exprs {
-			p.missing();
 		}
 
 		elems.push(m.complete(p, TS_EXPR_WITH_TYPE_ARGS));
@@ -502,7 +496,7 @@ fn ts_property_or_method_sig(p: &mut Parser, m: Marker, readonly: bool) -> Optio
 		if p.at(T![<]) {
 			no_recover!(p, ts_type_params(p));
 		}
-		parse_parameter_list(p).or_missing_with_error(p, js_parse_error::expected_parameters);
+		parse_parameter_list(p).or_syntax_error(p, js_parse_error::expected_parameters);
 		if p.at(T![:]) {
 			ts_type_or_type_predicate_ann(p, T![:]);
 		}
@@ -572,7 +566,7 @@ pub fn ts_signature_member(p: &mut Parser, construct_sig: bool) -> Option<Comple
 			in_binding_list_for_signature: true,
 			..p.state.clone()
 		});
-		parse_parameter_list(guard).or_missing(guard);
+		parse_parameter_list(guard).ok();
 	}
 	if p.at(T![:]) {
 		no_recover!(p, ts_type_or_type_predicate_ann(p, T![:]));
@@ -708,7 +702,7 @@ pub fn ts_fn_or_constructor_type(p: &mut Parser, fn_type: bool) -> Option<Comple
 	if p.at(T![<]) {
 		ts_type_params(p);
 	}
-	parse_parameter_list(p).or_missing_with_error(p, js_parse_error::expected_parameters);
+	parse_parameter_list(p).or_syntax_error(p, js_parse_error::expected_parameters);
 	if ts_type_or_type_predicate_ann(p, T![=>]).is_none() && p.state.no_recovery {
 		m.abandon(p);
 		return None;
@@ -726,7 +720,7 @@ pub fn ts_fn_or_constructor_type(p: &mut Parser, fn_type: bool) -> Option<Comple
 
 pub(crate) fn ts_type_or_type_predicate_ann(
 	p: &mut Parser,
-	return_token: SyntaxKind,
+	return_token: JsSyntaxKind,
 ) -> Option<CompletedMarker> {
 	let ident_ref_set = token_set![T![await], T![yield], T![ident]];
 	p.expect_no_recover(return_token)?;
@@ -828,7 +822,7 @@ fn intersection_or_union(
 	p: &mut Parser,
 	intersection: bool,
 	mut constituent: impl FnMut(&mut Parser) -> Option<CompletedMarker>,
-	op: SyntaxKind,
+	op: JsSyntaxKind,
 ) -> Option<CompletedMarker> {
 	let kind = if intersection {
 		TS_INTERSECTION
@@ -991,7 +985,7 @@ pub fn ts_non_array_type(p: &mut Parser) -> Option<CompletedMarker> {
 		}
 		JS_NUMBER_LITERAL | JS_STRING_LITERAL | TRUE_KW | FALSE_KW | JS_REGEX_LITERAL => Some(
 			parse_literal_expression(p)
-				.precede_or_missing(p)
+				.precede(p)
 				.complete(p, TS_LITERAL),
 		),
 		BACKTICK => {

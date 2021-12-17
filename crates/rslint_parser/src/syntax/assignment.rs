@@ -4,10 +4,9 @@ use crate::syntax::class::parse_initializer_clause;
 use crate::syntax::expr::{conditional_expr, expr, is_at_name, parse_name, unary_expr};
 use crate::syntax::js_parse_error::{expected_assignment_target, expected_identifier};
 use crate::syntax::pattern::{ParseArrayPattern, ParseObjectPattern, ParseWithDefaultPattern};
-use crate::CompletedNodeOrMissingMarker::NodeMarker;
 use crate::ParsedSyntax::{Absent, Present};
 use crate::{CompletedMarker, Parser};
-use crate::{SyntaxKind::*, *};
+use crate::{JsSyntaxKind::*, *};
 
 // test assignment_target
 // foo += bar = b ??= 3;
@@ -107,7 +106,7 @@ struct AssignmentPatternWithDefault;
 
 impl ParseWithDefaultPattern for AssignmentPatternWithDefault {
 	#[inline]
-	fn pattern_with_default_kind() -> SyntaxKind {
+	fn pattern_with_default_kind() -> JsSyntaxKind {
 		JS_ASSIGNMENT_WITH_DEFAULT
 	}
 
@@ -126,12 +125,12 @@ struct ArrayAssignmentPattern;
 
 impl ParseArrayPattern<AssignmentPatternWithDefault> for ArrayAssignmentPattern {
 	#[inline]
-	fn unknown_pattern_kind() -> SyntaxKind {
+	fn unknown_pattern_kind() -> JsSyntaxKind {
 		JS_UNKNOWN_ASSIGNMENT
 	}
 
 	#[inline]
-	fn array_pattern_kind() -> SyntaxKind {
+	fn array_pattern_kind() -> JsSyntaxKind {
 		JS_ARRAY_ASSIGNMENT_PATTERN
 	}
 
@@ -149,11 +148,11 @@ impl ParseArrayPattern<AssignmentPatternWithDefault> for ArrayAssignmentPattern 
 	// ([ ...c = "default" ] = a);
 	// ([ ...rest, other_assignment ] = a);
 	#[inline]
-	fn rest_pattern_kind() -> SyntaxKind {
+	fn rest_pattern_kind() -> JsSyntaxKind {
 		JS_ARRAY_ASSIGNMENT_PATTERN_REST_ELEMENT
 	}
 
-	fn list_kind() -> SyntaxKind {
+	fn list_kind() -> JsSyntaxKind {
 		JS_ARRAY_ASSIGNMENT_PATTERN_ELEMENT_LIST
 	}
 
@@ -176,16 +175,16 @@ struct ObjectAssignmentPattern;
 // ({ bar: [baz = "baz"], foo = "foo", ...rest } = {});
 impl ParseObjectPattern for ObjectAssignmentPattern {
 	#[inline]
-	fn unknown_pattern_kind() -> SyntaxKind {
+	fn unknown_pattern_kind() -> JsSyntaxKind {
 		JS_UNKNOWN_ASSIGNMENT
 	}
 
 	#[inline]
-	fn object_pattern_kind() -> SyntaxKind {
+	fn object_pattern_kind() -> JsSyntaxKind {
 		JS_OBJECT_ASSIGNMENT_PATTERN
 	}
 
-	fn list_kind() -> SyntaxKind {
+	fn list_kind() -> JsSyntaxKind {
 		JS_OBJECT_ASSIGNMENT_PATTERN_PROPERTY_LIST
 	}
 
@@ -217,18 +216,18 @@ impl ParseObjectPattern for ObjectAssignmentPattern {
 		let m = p.start();
 
 		let kind = if p.at(T![:]) || p.nth_at(1, T![:]) {
-			parse_name(p).or_missing_with_error(p, expected_identifier);
+			parse_name(p).or_syntax_error(p, expected_identifier);
 			p.expect_required(T![:]);
 			parse_assignment_pattern(p, AssignmentExprPrecedence::Conditional)
-				.or_missing_with_error(p, expected_assignment_target);
+				.or_syntax_error(p, expected_assignment_target);
 			JS_OBJECT_ASSIGNMENT_PATTERN_PROPERTY
 		} else {
 			parse_assignment(p, AssignmentExprPrecedence::Conditional)
-				.or_missing_with_error(p, expected_identifier);
+				.or_syntax_error(p, expected_identifier);
 			JS_OBJECT_ASSIGNMENT_PATTERN_SHORTHAND_PROPERTY
 		};
 
-		parse_initializer_clause(p).or_missing(p);
+		parse_initializer_clause(p).ok();
 
 		Present(m.complete(p, kind))
 	}
@@ -256,9 +255,9 @@ impl ParseObjectPattern for ObjectAssignmentPattern {
 		p.bump(T![...]);
 
 		let target = parse_assignment_pattern(p, AssignmentExprPrecedence::Conditional)
-			.or_missing_with_error(p, expected_assignment_target);
+			.or_syntax_error(p, expected_assignment_target);
 
-		if let NodeMarker(mut target) = target {
+		if let Some(mut target) = target {
 			if matches!(
 				target.kind(),
 				JS_OBJECT_ASSIGNMENT_PATTERN | JS_ARRAY_ASSIGNMENT_PATTERN
@@ -306,7 +305,7 @@ struct ReparseAssignment {
 	// Index 0: Re-mapped kind of the node
 	// Index 1: Started marker. A `None` marker means that this node should be dropped
 	//          from the re-written tree
-	parents: Vec<(SyntaxKind, Option<Marker>)>,
+	parents: Vec<(JsSyntaxKind, Option<Marker>)>,
 	// Stores the completed assignment node (valid or invalid).
 	result: Option<CompletedMarker>,
 	// Tracks if the visitor is still inside of an assignment
@@ -329,7 +328,7 @@ impl ReparseAssignment {
 ///   Validates that the operator isn't `?.` .
 /// * Converts identifier expressions to identifier assignment, drops the inner reference identifier
 impl RewriteParseEvents for ReparseAssignment {
-	fn start_node(&mut self, kind: SyntaxKind, p: &mut Parser) {
+	fn start_node(&mut self, kind: JsSyntaxKind, p: &mut Parser) {
 		if !self.inside_assignment {
 			self.parents.push((kind, Some(p.start())));
 			return;
@@ -372,7 +371,7 @@ impl RewriteParseEvents for ReparseAssignment {
 		}
 	}
 
-	fn token(&mut self, kind: SyntaxKind, p: &mut Parser) {
+	fn token(&mut self, kind: JsSyntaxKind, p: &mut Parser) {
 		let parent = self.parents.last_mut();
 
 		if let Some((parent_kind, _)) = parent {
@@ -386,15 +385,6 @@ impl RewriteParseEvents for ReparseAssignment {
 		}
 
 		p.bump_remap(kind);
-	}
-
-	fn missing(&mut self, p: &mut Parser) {
-		// Drop the missing marker for the `?.` token of the computer member expression because
-		// computed member assignment has no such slot (token error's in case `?.` is used).
-		// Forward all other "missing" slots.
-		if self.parents.last().map(|(parent, _)| parent) != Some(&JS_COMPUTED_MEMBER_ASSIGNMENT) {
-			p.missing();
-		}
 	}
 }
 

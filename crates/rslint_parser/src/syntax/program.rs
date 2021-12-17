@@ -10,7 +10,7 @@ use crate::syntax::function::{is_at_async_function, LineBreak};
 use crate::syntax::module::parse_module_body;
 use crate::syntax::stmt::directives;
 use crate::ParsedSyntax::Present;
-use crate::{SyntaxKind::*, *};
+use crate::{JsSyntaxKind::*, *};
 use syntax::stmt::FOLLOWS_LET;
 
 #[macro_export]
@@ -50,9 +50,6 @@ fn named_export_specifier(p: &mut Parser) -> CompletedMarker {
 	if p.cur_src() == "as" {
 		p.bump_remap(T![as]);
 		identifier_name(p);
-	} else {
-		p.missing(); // as
-		p.missing(); // name
 	}
 	m.complete(p, SPECIFIER)
 }
@@ -181,7 +178,6 @@ pub fn export_decl(p: &mut Parser) -> CompletedMarker {
 		p.bump_remap(T![type]);
 		true
 	} else {
-		p.missing();
 		false
 	};
 
@@ -241,10 +237,7 @@ pub fn export_decl(p: &mut Parser) -> CompletedMarker {
 				in_default: true,
 				..p.state.clone()
 			});
-			parse_class_declaration(p)
-				// TODO: change position of unknown node, it's not valid at this position
-				.or_invalid_to_unknown(p, JS_UNKNOWN_EXPRESSION)
-				.unwrap();
+			parse_class_declaration(p).unwrap();
 			return m.complete(p, EXPORT_DEFAULT_DECL);
 		}
 
@@ -264,17 +257,14 @@ pub fn export_decl(p: &mut Parser) -> CompletedMarker {
 	}
 
 	if !only_ty && p.at(T![class]) {
-		parse_class_declaration(p)
-			// TODO: change position of unknown node, it's not valid at this position
-			.or_invalid_to_unknown(p, JS_UNKNOWN_EXPRESSION)
-			.unwrap();
+		parse_class_declaration(p).unwrap();
 	} else if !only_ty
 		// function ...
 		&& (p.at(T![function])
 			||
 		is_at_async_function(p, LineBreak::DoCheck))
 	{
-		parse_function_declaration(p).unwrap().unwrap();
+		parse_function_declaration(p).unwrap();
 	} else if !only_ty && p.at(T![const]) && p.nth_src(1) == "enum" {
 		ts_enum(p).err_if_not_ts(p, "enums can only be used in TypeScript files");
 	} else if !only_ty
@@ -336,8 +326,6 @@ pub fn export_decl(p: &mut Parser) -> CompletedMarker {
 		if p.cur_src() == "from" {
 			from_clause_and_semi(p, start);
 		} else {
-			p.missing(); // from token
-			p.missing(); // module source
 			semi(p, start..p.cur_tok().range.start);
 			if export_default || exports_ns {
 				let err = p

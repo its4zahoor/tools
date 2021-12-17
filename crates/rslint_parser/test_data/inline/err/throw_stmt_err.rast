@@ -2,10 +2,10 @@ JsModule {
     interpreter_token: missing (optional),
     directives: JsDirectiveList [],
     items: JsModuleItemList [
-        JsThrowStatement {
-            throw_token: THROW_KW@0..5 "throw" [] [],
-            argument: missing (required),
-            semicolon_token: missing (optional),
+        JsUnknownStatement {
+            items: [
+                THROW_KW@0..5 "throw" [] [],
+            ],
         },
         JsExpressionStatement {
             expression: NewExpr {
@@ -36,10 +36,8 @@ JsModule {
   0: (empty)
   1: JS_DIRECTIVE_LIST@0..0
   2: JS_MODULE_ITEM_LIST@0..27
-    0: JS_THROW_STATEMENT@0..5
+    0: JS_UNKNOWN_STATEMENT@0..5
       0: THROW_KW@0..5 "throw" [] []
-      1: (empty)
-      2: (empty)
     1: JS_EXPRESSION_STATEMENT@5..27
       0: NEW_EXPR@5..27
         0: NEW_KW@5..10 "new" [Whitespace("\n")] [Whitespace(" ")]

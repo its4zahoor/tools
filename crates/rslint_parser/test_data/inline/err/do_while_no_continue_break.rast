@@ -2,22 +2,20 @@ JsModule {
     interpreter_token: missing (optional),
     directives: JsDirectiveList [],
     items: JsModuleItemList [
-        JsDoWhileStatement {
-            do_token: DO_KW@0..3 "do" [] [Whitespace(" ")],
-            body: JsBlockStatement {
-                l_curly_token: L_CURLY@3..5 "{" [] [Whitespace(" ")],
-                statements: JsStatementList [],
-                r_curly_token: R_CURLY@5..7 "}" [] [Whitespace(" ")],
-            },
-            while_token: missing (required),
-            l_paren_token: missing (required),
-            test: JsUnknownExpression {
-                items: [
-                    BREAK_KW@7..13 "break" [] [Whitespace(" ")],
-                ],
-            },
-            r_paren_token: missing (required),
-            semicolon_token: missing (optional),
+        JsUnknownStatement {
+            items: [
+                DO_KW@0..3 "do" [] [Whitespace(" ")],
+                JsBlockStatement {
+                    l_curly_token: L_CURLY@3..5 "{" [] [Whitespace(" ")],
+                    statements: JsStatementList [],
+                    r_curly_token: R_CURLY@5..7 "}" [] [Whitespace(" ")],
+                },
+                JsUnknownExpression {
+                    items: [
+                        BREAK_KW@7..13 "break" [] [Whitespace(" ")],
+                    ],
+                },
+            ],
         },
         JsExpressionStatement {
             expression: JsParenthesizedExpression {
@@ -31,22 +29,20 @@ JsModule {
             },
             semicolon_token: missing (optional),
         },
-        JsDoWhileStatement {
-            do_token: DO_KW@23..27 "do" [Whitespace("\n")] [Whitespace(" ")],
-            body: JsBlockStatement {
-                l_curly_token: L_CURLY@27..29 "{" [] [Whitespace(" ")],
-                statements: JsStatementList [],
-                r_curly_token: R_CURLY@29..31 "}" [] [Whitespace(" ")],
-            },
-            while_token: missing (required),
-            l_paren_token: missing (required),
-            test: JsUnknownExpression {
-                items: [
-                    CONTINUE_KW@31..40 "continue" [] [Whitespace(" ")],
-                ],
-            },
-            r_paren_token: missing (required),
-            semicolon_token: missing (optional),
+        JsUnknownStatement {
+            items: [
+                DO_KW@23..27 "do" [Whitespace("\n")] [Whitespace(" ")],
+                JsBlockStatement {
+                    l_curly_token: L_CURLY@27..29 "{" [] [Whitespace(" ")],
+                    statements: JsStatementList [],
+                    r_curly_token: R_CURLY@29..31 "}" [] [Whitespace(" ")],
+                },
+                JsUnknownExpression {
+                    items: [
+                        CONTINUE_KW@31..40 "continue" [] [Whitespace(" ")],
+                    ],
+                },
+            ],
         },
         JsExpressionStatement {
             expression: JsParenthesizedExpression {
@@ -68,18 +64,14 @@ JsModule {
   0: (empty)
   1: JS_DIRECTIVE_LIST@0..0
   2: JS_MODULE_ITEM_LIST@0..47
-    0: JS_DO_WHILE_STATEMENT@0..13
+    0: JS_UNKNOWN_STATEMENT@0..13
       0: DO_KW@0..3 "do" [] [Whitespace(" ")]
       1: JS_BLOCK_STATEMENT@3..7
         0: L_CURLY@3..5 "{" [] [Whitespace(" ")]
         1: JS_STATEMENT_LIST@5..5
         2: R_CURLY@5..7 "}" [] [Whitespace(" ")]
-      2: (empty)
-      3: (empty)
-      4: JS_UNKNOWN_EXPRESSION@7..13
+      2: JS_UNKNOWN_EXPRESSION@7..13
         0: BREAK_KW@7..13 "break" [] [Whitespace(" ")]
-      5: (empty)
-      6: (empty)
     1: JS_EXPRESSION_STATEMENT@13..23
       0: JS_PARENTHESIZED_EXPRESSION@13..23
         0: L_PAREN@13..14 "(" [] []
@@ -87,18 +79,14 @@ JsModule {
           0: CONTINUE_KW@14..22 "continue" [] []
         2: R_PAREN@22..23 ")" [] []
       1: (empty)
-    2: JS_DO_WHILE_STATEMENT@23..40
+    2: JS_UNKNOWN_STATEMENT@23..40
       0: DO_KW@23..27 "do" [Whitespace("\n")] [Whitespace(" ")]
       1: JS_BLOCK_STATEMENT@27..31
         0: L_CURLY@27..29 "{" [] [Whitespace(" ")]
         1: JS_STATEMENT_LIST@29..29
         2: R_CURLY@29..31 "}" [] [Whitespace(" ")]
-      2: (empty)
-      3: (empty)
-      4: JS_UNKNOWN_EXPRESSION@31..40
+      2: JS_UNKNOWN_EXPRESSION@31..40
         0: CONTINUE_KW@31..40 "continue" [] [Whitespace(" ")]
-      5: (empty)
-      6: (empty)
     3: JS_EXPRESSION_STATEMENT@40..47
       0: JS_PARENTHESIZED_EXPRESSION@40..47
         0: L_PAREN@40..41 "(" [] []
