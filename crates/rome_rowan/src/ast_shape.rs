@@ -1,6 +1,6 @@
 use crate::api::RawLanguage;
 use crate::green::GreenElement;
-use crate::{GreenNode, Language, SyntaxKind};
+use crate::Language;
 use std::marker::PhantomData;
 
 pub enum NodeShape<'a, L: Language> {
